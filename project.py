@@ -12,7 +12,7 @@ st.write(data)
 
 st.write(data.describe())
 st.write(data.info())
-st.write(data.shape)
+st.write(datajbkjbkjbbjb.shape)
 
 
 st.write("Par 2 - Data Pre-processing and Cleaning") 
