@@ -3,7 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.impute import SimpleImputer, KNNImputer
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, MaxAbsScaler, RobustScaler
+
 
 def load_data():
     st.sidebar.title("Upload Your Dataset")
@@ -11,7 +12,7 @@ def load_data():
     
     if uploaded_file is not None:
         delimiter = st.sidebar.selectbox("Select delimiter", (",", ";", "\t", "|"))
-        header_option = st.sidebar.checkbox("Does your file have a header?", value=True)
+        header_option = st.sidebar.checkbox("Does your file have a header ?", value=True)
         header = 0 if header_option else None
         df = pd.read_csv(uploaded_file, delimiter=delimiter, header=header)
         return df
@@ -21,18 +22,18 @@ def load_data():
 
 def data_preview(df):
     st.subheader("Data Preview")
-    st.write("First few rows of the dataset:")
+    st.write("First few rows of the dataset :")
     st.write(df.head())
-    st.write("Last few rows of the dataset:")
+    st.write("Last few rows of the dataset :")
     st.write(df.tail())
 
 def data_summary(df):
     st.subheader("Data Summary")
-    st.write("Number of rows and columns:")
-    st.write(f"Rows: {df.shape[0]}, Columns: {df.shape[1]}")
-    st.write("Column names:")
+    st.write("Number of rows and columns :")
+    st.write(f"Rows : {df.shape[0]}, Columns : {df.shape[1]}")
+    st.write("Column names :")
     st.write(df.columns.tolist())
-    st.write("Missing values per column:")
+    st.write("Missing values per column :")
     st.write(df.isnull().sum())
 
 def handle_missing_values(df):
@@ -68,16 +69,32 @@ def normalize_data(df):
     st.sidebar.subheader("Normalize Data")
     method = st.sidebar.selectbox("Choose a normalization method", 
                                   ["Min-Max Normalization", 
-                                   "Z-score Standardization"])
+                                   "Z-score Standardization",
+                                   "MaxAbs Scaling",
+                                   "Robust Scaling"])
+    
+    numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
+
+    if numeric_columns.empty:
+        st.sidebar.warning("No numeric columns to normalize.")
+        return df
     
     if method == "Min-Max Normalization":
         scaler = MinMaxScaler()
-        df[df.columns] = scaler.fit_transform(df[df.columns])
+        df[numeric_columns] = scaler.fit_transform(df[numeric_columns])
     elif method == "Z-score Standardization":
         scaler = StandardScaler()
-        df[df.columns] = scaler.fit_transform(df[df.columns])
+        df[numeric_columns] = scaler.fit_transform(df[numeric_columns])
+    elif method == "MaxAbs Scaling":
+        scaler = MaxAbsScaler()
+        df[numeric_columns] = scaler.fit_transform(df[numeric_columns])
+    elif method == "Robust Scaling":
+        scaler = RobustScaler()
+        df[numeric_columns] = scaler.fit_transform(df[numeric_columns])
         
     return df
+
+
 
 def visualize_data(df):
     st.subheader("Data Visualization")
@@ -86,20 +103,20 @@ def visualize_data(df):
     selected_columns = st.multiselect("Select columns to visualize", columns, default=columns)
     
     if selected_columns:
-        st.write("Histograms:")
+        st.write("Histograms :")
         for col in selected_columns:
             fig, ax = plt.subplots()
             sns.histplot(df[col], ax=ax, kde=True)
             st.pyplot(fig)
             
-        st.write("Box Plots:")
+        st.write("Box Plots :")
         for col in selected_columns:
             fig, ax = plt.subplots()
             sns.boxplot(x=df[col], ax=ax)
             st.pyplot(fig)
 
 def main():
-    st.title("Interactive Data Analysis and Clustering")
+    st.title("Interactive data analysis and clustering")
     
     df = load_data()
     
@@ -107,13 +124,13 @@ def main():
         data_preview(df)
         data_summary(df)
         
-        st.subheader("Data Cleaning")
+        st.subheader("Data cleaning")
         df = handle_missing_values(df)
         
         st.write("Data after cleaning:")
         st.write(df.head())
         
-        st.subheader("Data Normalization")
+        st.subheader("Data normalization")
         df = normalize_data(df)
         
         st.write("Data after normalization:")
