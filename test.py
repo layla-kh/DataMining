@@ -14,23 +14,23 @@ if uploaded_file is not None:
 
     # Load data
     data = pd.read_csv(uploaded_file, sep=separator, header=header)
-    st.write("Data loaded successfully!")
+    st.write("Data loaded successfully !")
 
     #### 2. Data Description
     st.subheader("Data Description")
-    st.write("Preview of the first few lines of the data:")
+    st.write("Preview of the first few lines of the data :")
     st.dataframe(data.head())
-    st.write("Preview of the last few lines of the data:")
+    st.write("Preview of the last few lines of the data :")
     st.dataframe(data.tail())
 
     #### 3. Statistical Summary
     st.subheader("Statistical Summary")
-    st.write("Basic statistics of the data:")
+    st.write("Basic statistics of the data :")
     st.write(data.describe(include='all'))
-    st.write("Number of rows and columns:", data.shape)
-    st.write("Column names:", data.columns.tolist())
+    st.write("Number of rows and columns :", data.shape)
+    st.write("Column names :", data.columns.tolist())
     missing_values = data.isnull().sum()
-    st.write("Number of missing values per column:")
+    st.write("Number of missing values per column :")
     st.write(missing_values)
 
     #### Part II: Data Pre-processing and Cleaning
@@ -39,7 +39,7 @@ if uploaded_file is not None:
 
     ## Managing Missing Values
     st.subheader("Managing Missing Values")
-    method = st.selectbox("Select method to handle missing values:",
+    method = st.selectbox("Select method to handle missing values :",
                           ["Delete rows", "Delete columns", "Replace with mean (numeric only)", "Replace with median (numeric only)", "Replace with mode", "KNN Imputation", "Simple Imputation"])
 
     if st.button("Apply Missing Value Method"):
@@ -73,7 +73,7 @@ if uploaded_file is not None:
 
     ## Data Normalization
     st.subheader("Data Normalization")
-    norm_method = st.selectbox("Select normalization method:",
+    norm_method = st.selectbox("Select normalization method :",
                                ["Min-Max Scaling", "Z-Score Standardization"])
     
     if st.button("Apply Normalization"):
