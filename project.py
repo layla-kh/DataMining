@@ -125,6 +125,126 @@ def visualize_data(df):
 
 
 
+def apply_clustering(df):
+    st.sidebar.subheader("Clustering")
+    algorithm = st.sidebar.selectbox("Choose a clustering algorithm", ["KMeans", "DBSCAN"])
+    
+    if algorithm == "KMeans":
+        n_clusters = st.sidebar.slider("Number of clusters", 2, 10, 3)
+        kmeans = KMeans(n_clusters=n_clusters)
+        clusters = kmeans.fit_predict(df.select_dtypes(include=['float64', 'int64']))
+        df['Cluster'] = clusters
+        
+        st.subheader("KMeans Clustering Results")
+        st.write(f"Number of clusters: {n_clusters}")
+        for i in range(n_clusters):
+            st.write(f"Cluster {i} center: {kmeans.cluster_centers_[i]}")
+    
+    elif algorithm == "DBSCAN":
+        eps = st.sidebar.slider("Epsilon", 0.1, 10.0, 0.5)
+        min_samples = st.sidebar.slider("Minimum samples", 1, 10, 5)
+        dbscan = DBSCAN(eps=eps, min_samples=min_samples)
+        clusters = dbscan.fit_predict(df.select_dtypes(include=['float64', 'int64']))
+        df['Cluster'] = clusters
+        
+        st.subheader("DBSCAN Clustering Results")
+        st.write(f"Epsilon: {eps}, Minimum samples: {min_samples}")
+        st.write(f"Number of clusters: {len(set(clusters)) - (1 if -1 in clusters else 0)}")
+    
+    return df
+
+def visualize_clusters(df):
+    st.subheader("Cluster Visualization")
+    if 'Cluster' in df.columns:
+        df.columns = df.columns.astype(str)  # Ensure all column names are strings
+        pca_df = df.select_dtypes(include=['float64', 'int64'])
+        pca = PCA(n_components=2)
+        pca_result = pca.fit_transform(pca_df)
+        
+        result_df = pd.DataFrame(data=pca_result, columns=['PCA1', 'PCA2'])
+        result_df['Cluster'] = df['Cluster']
+        
+        fig, ax = plt.subplots()
+        sns.scatterplot(x='PCA1', y='PCA2', hue='Cluster', palette='viridis', data=result_df, ax=ax)
+        st.pyplot(fig)
+    else:
+        st.write("No clustering results to visualize")
+
+
+
+def apply_clustering(df):
+    st.sidebar.subheader("Clustering")
+    algorithm = st.sidebar.selectbox("Choose a clustering algorithm", ["KMeans", "DBSCAN"])
+    
+    if algorithm == "KMeans":
+        n_clusters = st.sidebar.slider("Number of clusters", 2, 10, 3)
+        kmeans = KMeans(n_clusters=n_clusters)
+        clusters = kmeans.fit_predict(df.select_dtypes(include=['float64', 'int64']))
+        df['Cluster'] = clusters
+        
+        st.subheader("KMeans Clustering Results")
+        st.write(f"Number of clusters: {n_clusters}")
+        for i in range(n_clusters):
+            st.write(f"Cluster {i} center: {kmeans.cluster_centers_[i]}")
+    
+    elif algorithm == "DBSCAN":
+        eps = st.sidebar.slider("Epsilon", 0.1, 10.0, 0.5)
+        min_samples = st.sidebar.slider("Minimum samples", 1, 10, 5)
+        dbscan = DBSCAN(eps=eps, min_samples=min_samples)
+        clusters = dbscan.fit_predict(df.select_dtypes(include=['float64', 'int64']))
+        df['Cluster'] = clusters
+        
+        st.subheader("DBSCAN Clustering Results")
+        st.write(f"Epsilon: {eps}, Minimum samples: {min_samples}")
+        st.write(f"Number of clusters: {len(set(clusters)) - (1 if -1 in clusters else 0)}")
+    
+    return df
+
+def visualize_clusters(df):
+    st.subheader("Cluster Visualization")
+    if 'Cluster' in df.columns:
+        df.columns = df.columns.astype(str)  # Ensure all column names are strings
+        pca_df = df.select_dtypes(include=['float64', 'int64'])
+        pca = PCA(n_components=2)
+        pca_result = pca.fit_transform(pca_df)
+        
+        result_df = pd.DataFrame(data=pca_result, columns=['PCA1', 'PCA2'])
+        result_df['Cluster'] = df['Cluster']
+        
+        fig, ax = plt.subplots()
+        sns.scatterplot(x='PCA1', y='PCA2', hue='Cluster', palette='viridis', data=result_df, ax=ax)
+        st.pyplot(fig)
+    else:
+        st.write("No clustering results to visualize")
+
+def apply_prediction(df):
+    st.sidebar.subheader("Prediction")
+    target = st.sidebar.selectbox("Select the target column", df.columns)
+    algorithm = st.sidebar.selectbox("Choose a prediction algorithm", ["Linear Regression", "Random Forest"])
+    
+    X = df.drop(columns=[target])
+    y = df[target]
+    X.columns = X.columns.astype(str)  # Ensure all column names are strings
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    if algorithm == "Linear Regression":
+        model = LinearRegression()
+    elif algorithm == "Random Forest":
+        n_estimators = st.sidebar.slider("Number of estimators", 10, 100, 10)
+        model = RandomForestClassifier(n_estimators=n_estimators)
+    
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    
+    if algorithm == "Linear Regression":
+        mse = mean_squared_error(y_test, predictions)
+        st.subheader("Linear Regression Results")
+        st.write(f"Mean Squared Error: {mse}")
+    elif algorithm == "Random Forest":
+        accuracy = accuracy_score(y_test, predictions)
+        st.subheader("Random Forest Results")
+        st.write(f"Accuracy: {accuracy}")
+
 def main():
     st.title("Interactive Data Analysis, Clustering, and Prediction")
     
@@ -148,6 +268,14 @@ def main():
         
         visualize_data(df)
         
+        st.sidebar.subheader("Choose Task")
+        task = st.sidebar.selectbox("Choose a task", ["Clustering", "Prediction"])
+        
+        if task == "Clustering":
+            df = apply_clustering(df)
+            visualize_clusters(df)
+        elif task == "Prediction":
+            apply_prediction(df)
 
 if __name__ == "__main__":
     main()
