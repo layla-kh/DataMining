@@ -4,7 +4,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, MaxAbsScaler, RobustScaler
-
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, mean_squared_error
 
 def load_data():
     st.sidebar.title("Upload Your Dataset")
@@ -115,6 +119,79 @@ def visualize_data(df):
             sns.boxplot(x=df[col], ax=ax)
             st.pyplot(fig)
 
+def clustering(df):
+    st.subheader("Clustering")
+    algorithm = st.selectbox("Choose a clustering algorithm", ["K-Means", "DBSCAN"])
+    
+    if algorithm == "K-Means":
+        n_clusters = st.slider("Number of clusters", 2, 10, 3)
+        model = KMeans(n_clusters=n_clusters)
+    elif algorithm == "DBSCAN":
+        eps = st.slider("Epsilon", 0.1, 10.0, 0.5)
+        min_samples = st.slider("Minimum samples", 1, 10, 5)
+        model = DBSCAN(eps=eps, min_samples=min_samples)
+    
+    if st.button("Run Clustering"):
+        df_numeric = df.select_dtypes(include=['float64', 'int64'])
+        if not df_numeric.empty:
+            clusters = model.fit_predict(df_numeric)
+            df['Cluster'] = clusters
+            st.write("Clustering completed. Here are the results:")
+            st.write(df)
+            st.write("Cluster Counts:")
+            st.write(df['Cluster'].value_counts())
+            
+            st.write("Cluster Visualization:")
+            fig, ax = plt.subplots()
+            sns.scatterplot(data=df, x=df_numeric.columns[0], y=df_numeric.columns[1], hue='Cluster', palette='viridis', ax=ax)
+            st.pyplot(fig)
+        else:
+            st.warning("The dataset does not contain numeric columns suitable for clustering.")
+
+def prediction(df):
+    st.subheader("Prediction")
+    task = st.selectbox("Choose a prediction task", ["Regression", "Classification"])
+    
+    target_column = st.selectbox("Select the target column", df.columns)
+    feature_columns = st.multiselect("Select feature columns", [col for col in df.columns if col != target_column])
+    
+    if task == "Regression":
+        algorithm = st.selectbox("Choose a regression algorithm", ["Linear Regression"])
+        
+        if algorithm == "Linear Regression":
+            model = LinearRegression()
+        
+        if st.button("Run Regression"):
+            X = df[feature_columns]
+            y = df[target_column]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+            mse = mean_squared_error(y_test, predictions)
+            st.write(f"Mean Squared Error: {mse}")
+            st.write("Predictions vs Actual values:")
+            results = pd.DataFrame({'Actual': y_test, 'Predicted': predictions})
+            st.write(results)
+    
+    elif task == "Classification":
+        algorithm = st.selectbox("Choose a classification algorithm", ["Random Forest"])
+        
+        if algorithm == "Random Forest":
+            n_estimators = st.slider("Number of trees", 10, 100, 50)
+            model = RandomForestClassifier(n_estimators=n_estimators)
+        
+        if st.button("Run Classification"):
+            X = df[feature_columns]
+            y = df[target_column]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+            accuracy = accuracy_score(y_test, predictions)
+            st.write(f"Accuracy: {accuracy}")
+            st.write("Predictions vs Actual values:")
+            results = pd.DataFrame({'Actual': y_test, 'Predicted': predictions})
+            st.write(results)
+
 def main():
     st.title("Interactive data analysis and clustering")
     
@@ -137,7 +214,12 @@ def main():
         st.write(df.head())
         
         visualize_data(df)
+        
+        st.markdown("---")
+        clustering(df)
+        
+        st.markdown("---")
+        prediction(df)
 
 if __name__ == "__main__":
     main()
-
