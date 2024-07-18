@@ -132,8 +132,13 @@ def clustering(df):
         model = DBSCAN(eps=eps, min_samples=min_samples)
     
     if st.button("Run Clustering"):
-        df_numeric = df.select_dtypes(include=['float64', 'int64'])
-        if not df_numeric.empty:
+        try:
+            # Ensure numeric data
+            df_numeric = df.apply(pd.to_numeric, errors='coerce').dropna(axis=1)
+            if df_numeric.empty:
+                st.warning("The dataset does not contain numeric columns suitable for clustering.")
+                return
+            
             clusters = model.fit_predict(df_numeric)
             df['Cluster'] = clusters
             st.write("Clustering completed. Here are the results:")
@@ -141,12 +146,17 @@ def clustering(df):
             st.write("Cluster Counts:")
             st.write(df['Cluster'].value_counts())
             
+            if algorithm == "K-Means":
+                st.write("Cluster Centers:")
+                st.write(model.cluster_centers_)
+            
             st.write("Cluster Visualization:")
             fig, ax = plt.subplots()
             sns.scatterplot(data=df, x=df_numeric.columns[0], y=df_numeric.columns[1], hue='Cluster', palette='viridis', ax=ax)
             st.pyplot(fig)
-        else:
-            st.warning("The dataset does not contain numeric columns suitable for clustering.")
+        except Exception as e:
+            st.error(f"An error occurred during clustering: {e}")
+
 
 def prediction(df):
     st.subheader("Prediction")
@@ -172,6 +182,13 @@ def prediction(df):
             st.write("Predictions vs Actual values:")
             results = pd.DataFrame({'Actual': y_test, 'Predicted': predictions})
             st.write(results)
+            
+            st.write("Regression Plot:")
+            fig, ax = plt.subplots()
+            sns.scatterplot(x=y_test, y=predictions, ax=ax)
+            plt.xlabel('Actual values')
+            plt.ylabel('Predicted values')
+            st.pyplot(fig)
     
     elif task == "Classification":
         algorithm = st.selectbox("Choose a classification algorithm", ["Random Forest"])
@@ -191,6 +208,11 @@ def prediction(df):
             st.write("Predictions vs Actual values:")
             results = pd.DataFrame({'Actual': y_test, 'Predicted': predictions})
             st.write(results)
+            
+            st.write("Confusion Matrix:")
+            fig, ax = plt.subplots()
+            sns.heatmap(pd.crosstab(y_test, predictions, rownames=['Actual'], colnames=['Predicted']), annot=True, cmap='Blues', ax=ax)
+            st.pyplot(fig)
 
 def main():
     st.title("Interactive data analysis and clustering")
