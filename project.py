@@ -248,9 +248,9 @@ def prediction(df):
         X = df.drop(columns=[target_column])
         y = df[target_column]
 
+        # For classification, ensure the target column is categorical
         if y.dtype in ['float64', 'int64']:
-            st.error("For classification, the target column must be categorical. Please choose an appropriate column.")
-            return
+            y = y.astype('category')
 
         classification_algo = st.selectbox("Choose a classification algorithm", ["K-Nearest Neighbors", "Random Forest"])
 
@@ -281,7 +281,7 @@ def prediction(df):
             st.write(pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted']))
 
 def main():
-    st.title("Interactive Data Analysis, Clustering, and Prediction")
+    st.title("Interactive Data Analysis, Clustering and Prediction")
     
     df = load_data()
     
