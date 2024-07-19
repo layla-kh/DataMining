@@ -27,9 +27,9 @@ def load_data():
 
 def data_preview(df):
     st.subheader("Data Preview")
-    st.write("First few rows of the dataset :")
+    st.write("First rows of the dataset :")
     st.write(df.head())
-    st.write("Last few rows of the dataset :")
+    st.write("Last rows of the dataset :")
     st.write(df.tail())
 
 def data_summary(df):
@@ -67,7 +67,6 @@ def handle_missing_values(df):
     elif method == "KNN imputation":
         imputer = KNNImputer()
         df = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
-        
     return df
 
 def normalize_data(df):
@@ -177,23 +176,28 @@ def apply_clustering(df):
     algorithm = st.sidebar.selectbox("Choose a clustering algorithm", ["KMeans", "DBSCAN"])
     
     if algorithm == "KMeans":
+        #on a set le nb de cluster par defaut a 3 mais faut svaoir le choisir
         n_clusters = st.sidebar.slider("Number of clusters", 2, 10, 3)
         kmeans = KMeans(n_clusters=n_clusters)
         clusters = kmeans.fit_predict(df.select_dtypes(include=['float64', 'int64']))
         df['Cluster'] = clusters
-        
+
+        # resulats ici:
         st.subheader("KMeans Clustering Results")
         st.write(f"Number of clusters: {n_clusters}")
         for i in range(n_clusters):
             st.write(f"Cluster {i} center: {kmeans.cluster_centers_[i]}")
     
     elif algorithm == "DBSCAN":
+        #The maximum distance between two points for them to be considered as part of the same neighborhood.
         eps = st.sidebar.slider("Epsilon", 0.1, 10.0, 0.5)
+        # The minimum number of points required to form a dense region 
         min_samples = st.sidebar.slider("Minimum samples", 1, 10, 5)
         dbscan = DBSCAN(eps=eps, min_samples=min_samples)
         clusters = dbscan.fit_predict(df.select_dtypes(include=['float64', 'int64']))
         df['Cluster'] = clusters
-        
+
+        # resulats ici:
         st.subheader("DBSCAN Clustering Results")
         st.write(f"Epsilon: {eps}, Minimum samples: {min_samples}")
         st.write(f"Number of clusters: {len(set(clusters)) - (1 if -1 in clusters else 0)}")
