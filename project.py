@@ -108,7 +108,7 @@ def visualize_data(df):
     
     columns = df.columns.tolist()
     selected_columns = st.multiselect("Select columns to visualize", columns, default=columns)
-    plot_type = st.selectbox("Select plot type", ["Histogram", "Box Plot"])
+    plot_type = st.selectbox("Select plot type", ["Histogram", "Box Plot", "Scatter Plot", "Line Plot", "Pair Plot", "Correlation Matrix"])
     
     if selected_columns:
         if plot_type == "Histogram":
@@ -124,6 +124,44 @@ def visualize_data(df):
                 fig, ax = plt.subplots()
                 sns.boxplot(x=df[col], ax=ax)
                 st.pyplot(fig)
+        
+        elif plot_type == "Scatter Plot":
+            st.write("Scatter Plots:")
+            if len(selected_columns) >= 2:
+                for i in range(len(selected_columns)):
+                    for j in range(i+1, len(selected_columns)):
+                        fig, ax = plt.subplots()
+                        sns.scatterplot(x=df[selected_columns[i]], y=df[selected_columns[j]], ax=ax)
+                        ax.set_xlabel(selected_columns[i])
+                        ax.set_ylabel(selected_columns[j])
+                        st.pyplot(fig)
+            else:
+                st.warning("Please select at least two columns for the scatter plot")
+        
+        elif plot_type == "Line Plot":
+            st.write("Line Plots:")
+            for col in selected_columns:
+                fig, ax = plt.subplots()
+                sns.lineplot(data=df[col], ax=ax)
+                st.pyplot(fig)
+        
+        elif plot_type == "Pair Plot":
+            st.write("Pair Plots:")
+            if len(selected_columns) >= 2:
+                pair_plot = sns.pairplot(df[selected_columns])
+                st.pyplot(pair_plot)
+            else:
+                st.warning("Please select at least two columns for the pair plot")
+        
+        elif plot_type == "Correlation Matrix":
+            st.write("Correlation Matrix:")
+            if len(selected_columns) >= 2:
+                corr = df[selected_columns].corr()
+                fig, ax = plt.subplots()
+                sns.heatmap(corr, annot=True, ax=ax, cmap="coolwarm")
+                st.pyplot(fig)
+            else:
+                st.warning("Please select at least two columns for thr correlation matrix")
 
 
 
