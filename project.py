@@ -31,18 +31,18 @@ def load_data():
 
 def data_preview(df):
     st.subheader("Data Preview")
-    st.write("First rows of the dataset :")
+    st.write("First rows of the dataset")
     st.write(df.head())
-    st.write("Last rows of the dataset :")
+    st.write("Last rows of the dataset")
     st.write(df.tail())
 
 def data_summary(df):
     st.subheader("Data Summary")
-    st.write("Number of rows and columns :")
+    st.write("Number of rows and columns")
     st.write(f"Rows : {df.shape[0]}, Columns : {df.shape[1]}")
     st.write("Column names :")
     st.write(df.columns.tolist())
-    st.write("Missing values per column :")
+    st.write("Missing values per column")
     st.write(df.isnull().sum())
 
 def handle_missing_values(df):
@@ -115,21 +115,18 @@ def visualize_data(df):
     
     if selected_columns:
         if plot_type == "Histogram":
-            st.write("Histograms:")
             for col in selected_columns:
                 fig, ax = plt.subplots()
                 sns.histplot(df[col], ax=ax, kde=True)
                 st.pyplot(fig)
                 
         elif plot_type == "Box Plot":
-            st.write("Box Plots:")
             for col in selected_columns:
                 fig, ax = plt.subplots()
                 sns.boxplot(x=df[col], ax=ax)
                 st.pyplot(fig)
         
         elif plot_type == "Scatter Plot":
-            st.write("Scatter Plots:")
             if len(selected_columns) >= 2:
                 for i in range(len(selected_columns)):
                     for j in range(i+1, len(selected_columns)):
@@ -142,14 +139,12 @@ def visualize_data(df):
                 st.warning("Please select at least two columns for the scatter plot")
         
         elif plot_type == "Line Plot":
-            st.write("Line Plots:")
             for col in selected_columns:
                 fig, ax = plt.subplots()
                 sns.lineplot(data=df[col], ax=ax)
                 st.pyplot(fig)
         
         elif plot_type == "Pair Plot":
-            st.write("Pair Plots:")
             if len(selected_columns) >= 2:
                 pair_plot = sns.pairplot(df[selected_columns])
                 st.pyplot(pair_plot)
@@ -157,7 +152,6 @@ def visualize_data(df):
                 st.warning("Please select at least two columns for the pair plot")
         
         elif plot_type == "Correlation Matrix":
-            st.write("Correlation Matrix:")
             if len(selected_columns) >= 2:
                 corr = df[selected_columns].corr()
                 fig, ax = plt.subplots()
@@ -166,52 +160,6 @@ def visualize_data(df):
             else:
                 st.warning("Please select at least two columns for thr correlation matrix")
 
-
-
-def apply_clustering(df):
-    st.sidebar.subheader("Clustering")
-    algorithm = st.sidebar.selectbox("Choose a clustering algorithm", ["KMeans", "DBSCAN"])
-    
-    if algorithm == "KMeans":
-        n_clusters = st.sidebar.slider("Number of clusters", 2, 10, 3)
-        kmeans = KMeans(n_clusters=n_clusters)
-        clusters = kmeans.fit_predict(df.select_dtypes(include=['float64', 'int64']))
-        df['Cluster'] = clusters
-        
-        st.subheader("KMeans Clustering Results")
-        st.write(f"Number of clusters: {n_clusters}")
-        for i in range(n_clusters):
-            st.write(f"Cluster {i} center: {kmeans.cluster_centers_[i]}")
-    
-    elif algorithm == "DBSCAN":
-        eps = st.sidebar.slider("Epsilon", 0.1, 10.0, 0.5)
-        min_samples = st.sidebar.slider("Minimum samples", 1, 10, 5)
-        dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-        clusters = dbscan.fit_predict(df.select_dtypes(include=['float64', 'int64']))
-        df['Cluster'] = clusters
-        
-        st.subheader("DBSCAN Clustering Results")
-        st.write(f"Epsilon: {eps}, Minimum samples: {min_samples}")
-        st.write(f"Number of clusters: {len(set(clusters)) - (1 if -1 in clusters else 0)}")
-    
-    return df
-
-def visualize_clusters(df):
-    st.subheader("Cluster Visualization")
-    if 'Cluster' in df.columns:
-        df.columns = df.columns.astype(str)  # Ensure all column names are strings
-        pca_df = df.select_dtypes(include=['float64', 'int64'])
-        pca = PCA(n_components=2)
-        pca_result = pca.fit_transform(pca_df)
-        
-        result_df = pd.DataFrame(data=pca_result, columns=['PCA1', 'PCA2'])
-        result_df['Cluster'] = df['Cluster']
-        
-        fig, ax = plt.subplots()
-        sns.scatterplot(x='PCA1', y='PCA2', hue='Cluster', palette='viridis', data=result_df, ax=ax)
-        st.pyplot(fig)
-    else:
-        st.write("No clustering results to visualize")
 
 
 def clustering(df):
@@ -226,7 +174,7 @@ def clustering(df):
         clusters = kmeans.fit_predict(df[numerical_columns])
         data_vis = df.copy()
         data_vis['Cluster'] = clusters
-        st.write("Cluster centers:")
+        st.write("Cluster centers")
         st.write(kmeans.cluster_centers_)
     
     elif algorithm == "DBSCAN":
@@ -239,7 +187,7 @@ def clustering(df):
     
     # Visualization of the Clusters
     if algorithm in ["KMeans", "DBSCAN"]:
-        st.subheader("2D scatter plot of clusters")
+        st.write("2D scatter plot of clusters")
         pca = PCA(2)
         pca_data = pca.fit_transform(df[numerical_columns])
         pca_vis_data = pca.transform(data_vis[numerical_columns])
@@ -249,7 +197,6 @@ def clustering(df):
         ax.add_artist(legend1)
         st.pyplot(fig)
 
-        st.subheader("3D scatter plot of clusters")
         pca = PCA(3)
         pca_data = pca.fit_transform(df[numerical_columns])
         pca_vis_data = pca.transform(data_vis[numerical_columns])
@@ -262,7 +209,7 @@ def clustering(df):
         )
         st.plotly_chart(fig)
         
-        st.subheader("Cluster statistics")
+        st.write("Cluster statistics")
         st.write(data_vis['Cluster'].value_counts())
 
 def prediction(df):
@@ -292,16 +239,15 @@ def prediction(df):
         y_pred = model.predict(X_test)
         
         st.write("Mean Squared Error :", mean_squared_error(y_test, y_pred))
-        st.write("Regression Coefficients :", model.coef_)
+        st.write("Regression Coefficients", model.coef_)
         if regression_algo != "Linear Regression":
-            st.write("Intercept:", model.intercept_)
+            st.write("Intercept :", model.intercept_)
 
     elif task_type == "Classification":
         target_column = st.selectbox("Select the target column for prediction", df.columns)
         X = df.drop(columns=[target_column])
         y = df[target_column]
 
-        # Ensure the target column is categorical
         if y.dtype in ['float64', 'int64']:
             st.error("For classification, the target column must be categorical. Please choose an appropriate column.")
             return
