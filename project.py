@@ -226,31 +226,69 @@ def visualize_clusters(df):
 
 def apply_prediction(df):
     st.sidebar.subheader("Prediction")
-    target = st.sidebar.selectbox("Select the target column", df.columns)
-    algorithm = st.sidebar.selectbox("Choose a prediction algorithm", ["Linear Regression", "Random Forest"])
-    
-    X = df.drop(columns=[target])
-    y = df[target]
-    X.columns = X.columns.astype(str)  # Ensure all column names are strings
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    if algorithm == "Linear Regression":
-        model = LinearRegression()
-    elif algorithm == "Random Forest":
-        n_estimators = st.sidebar.slider("Number of estimators", 10, 100, 10)
-        model = RandomForestClassifier(n_estimators=n_estimators)
-    
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    
-    if algorithm == "Linear Regression":
-        mse = mean_squared_error(y_test, predictions)
-        st.subheader("Linear Regression Results")
-        st.write(f"Mean Squared Error: {mse}")
-    elif algorithm == "Random Forest":
-        accuracy = accuracy_score(y_test, predictions)
-        st.subheader("Random Forest Results")
-        st.write(f"Accuracy: {accuracy}")
+    task_type = st.selectbox("Choose a prediction type:", ["Regression", "Classification"])
+
+    if task_type == "Regression":
+        numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
+        target_column = st.selectbox("Select the target column for prediction:", numerical_columns)
+        X = df.drop(columns=[target_column])
+        y = df[target_column]
+
+        regression_algo = st.selectbox("Choose a regression algorithm:", ["Linear Regression", "Ridge Regression", "Lasso Regression"])
+
+        if regression_algo == "Linear Regression":
+            model = LinearRegression()
+        elif regression_algo == "Ridge Regression":
+            alpha = st.slider("Choose the alpha parameter for Ridge Regression:", 0.01, 10.0, 1.0)
+            model = Ridge(alpha=alpha)
+        elif regression_algo == "Lasso Regression":
+            alpha = st.slider("Choose the alpha parameter for Lasso Regression:", 0.01, 10.0, 1.0)
+            model = Lasso(alpha=alpha)
+
+        test_size = st.slider("Choose test size (fraction of data to be used as test set):", 0.1, 0.5, 0.2)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+        
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        
+        st.write("Mean Squared Error:", mean_squared_error(y_test, y_pred))
+        st.write("Regression Coefficients:", model.coef_)
+        if regression_algo != "Linear Regression":
+            st.write("Intercept:", model.intercept_)
+
+    elif task_type == "Classification":
+        numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
+        target_column = st.selectbox("Select the target column for prediction:", df.columns)
+        X = df.drop(columns=[target_column])
+        y = df[target_column]
+
+        classification_algo = st.selectbox("Choose a classification algorithm:", ["K-Nearest Neighbors", "Random Forest"])
+
+        if classification_algo == "K-Nearest Neighbors":
+            n_neighbors = st.slider("Choose number of neighbors:", 1, 20, 5)
+            test_size = st.slider("Choose test size (fraction of data to be used as test set):", 0.1, 0.5, 0.2)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+            
+            model = KNeighborsClassifier(n_neighbors=n_neighbors)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            
+            st.write("Accuracy Score:", accuracy_score(y_test, y_pred))
+            st.write("Confusion Matrix:")
+            st.write(pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted']))
+
+        elif classification_algo == "Random Forest":
+            n_estimators = st.slider("Choose number of trees:", 10, 100, 10)
+            test_size = st.slider("Choose test size (fraction of data to be used as test set):", 0.1, 0.5, 0.2)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+            
+            model = RandomForestClassifier(n_estimators=n_estimators)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            
+            st.write("Accuracy Score:", accuracy_score(y_test, y_pred))
+            st.write("Confusion Matrix:")
+            st.write(pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted']))
 
 def main():
     st.title("Interactive Data Analysis, Clustering, and Prediction")
