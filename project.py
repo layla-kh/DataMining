@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, MaxAbsScaler, RobustScaler
 from sklearn.cluster import KMeans, DBSCAN
@@ -10,6 +11,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.decomposition import PCA
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 def load_data():
     st.sidebar.title("Upload Your Dataset")
@@ -210,58 +214,63 @@ def visualize_clusters(df):
         st.write("No clustering results to visualize")
 
 
-
-def apply_clustering(df):
+def clustering(df):
     st.sidebar.subheader("Clustering")
     algorithm = st.sidebar.selectbox("Choose a clustering algorithm", ["KMeans", "DBSCAN"])
     
+    numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
+
     if algorithm == "KMeans":
-        #on a set le nb de cluster par defaut a 3 mais faut svaoir le choisir
         n_clusters = st.sidebar.slider("Number of clusters", 2, 10, 3)
         kmeans = KMeans(n_clusters=n_clusters)
-        clusters = kmeans.fit_predict(df.select_dtypes(include=['float64', 'int64']))
-        df['Cluster'] = clusters
+        clusters = kmeans.fit_predict(df[numerical_columns])
 
-        # resulats ici:
-        st.subheader("KMeans Clustering Results")
-        st.write(f"Number of clusters: {n_clusters}")
-        for i in range(n_clusters):
-            st.write(f"Cluster {i} center: {kmeans.cluster_centers_[i]}")
+        # Create a copy of data for visualization without modifying original data
+        data_vis = df.copy()
+        data_vis['Cluster'] = clusters
+
+        st.write("Cluster centers:")
+        st.write(kmeans.cluster_centers_)
     
     elif algorithm == "DBSCAN":
-        #The maximum distance between two points for them to be considered as part of the same neighborhood.
         eps = st.sidebar.slider("Epsilon", 0.1, 10.0, 0.5)
-        # The minimum number of points required to form a dense region 
-        min_samples = st.sidebar.slider("Minimum samples", 1, 10, 5)
+        min_samples = st.sidebar.slider("Minimum samples", 1, 20, 5)
         dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-        clusters = dbscan.fit_predict(df.select_dtypes(include=['float64', 'int64']))
-        df['Cluster'] = clusters
+        clusters = dbscan.fit_predict(df[numerical_columns])
 
-        # resulats ici:
-        st.subheader("DBSCAN Clustering Results")
-        st.write(f"Epsilon: {eps}, Minimum samples: {min_samples}")
-        st.write(f"Number of clusters: {len(set(clusters)) - (1 if -1 in clusters else 0)}")
+        # Create a copy of data for visualization without modifying original data
+        data_vis = df.copy()
+        data_vis['Cluster'] = clusters
     
-    return df
-
-def visualize_clusters(df):
-    st.subheader("Cluster Visualization")
-    if 'Cluster' in df.columns:
-        df.columns = df.columns.astype(str)  # Ensure all column names are strings
-        pca_df = df.select_dtypes(include=['float64', 'int64'])
-        pca = PCA(n_components=2)
-        pca_result = pca.fit_transform(pca_df)
-        
-        result_df = pd.DataFrame(data=pca_result, columns=['PCA1', 'PCA2'])
-        result_df['Cluster'] = df['Cluster']
-        
+    # Visualization of Clusters
+    if algorithm in ["KMeans", "DBSCAN"]:
+        st.subheader("2D scatter plot of clusters")
+        pca = PCA(2)
+        pca_data = pca.fit_transform(df[numerical_columns])
+        pca_vis_data = pca.transform(data_vis[numerical_columns])
         fig, ax = plt.subplots()
-        sns.scatterplot(x='PCA1', y='PCA2', hue='Cluster', palette='viridis', data=result_df, ax=ax)
+        scatter = ax.scatter(pca_vis_data[:, 0], pca_vis_data[:, 1], c=data_vis['Cluster'])
+        legend1 = ax.legend(*scatter.legend_elements(), title="Clusters")
+        ax.add_artist(legend1)
         st.pyplot(fig)
-    else:
-        st.write("No clustering results to visualize")
 
-def apply_prediction(df):
+        st.subheader("3D scatter plot of clusters")
+        pca = PCA(3)
+        pca_data = pca.fit_transform(df[numerical_columns])
+        pca_vis_data = pca.transform(data_vis[numerical_columns])
+        pca_df = pd.DataFrame(data=pca_vis_data, columns=['PCA1', 'PCA2', 'PCA3'])
+        pca_df['Cluster'] = data_vis['Cluster']
+
+        fig = px.scatter_3d(
+            pca_df, x='PCA1', y='PCA2', z='PCA3',
+            color='Cluster', title='3D scatter plot of clusters'
+        )
+        st.plotly_chart(fig)
+        
+        st.subheader("Cluster statistics")
+        st.write(data_vis['Cluster'].value_counts())
+
+def prediction(df):
     task_type = st.selectbox("Choose a prediction type", ["Regression", "Classification"])
 
     if task_type == "Regression":
@@ -353,10 +362,12 @@ def main():
         task = st.sidebar.selectbox("Choose a task", ["Clustering", "Prediction"])
         
         if task == "Clustering":
-            df = apply_clustering(df)
-            visualize_clusters(df)
+            st.subheader("Clustering")
+            df = clustering(df)
+        
         elif task == "Prediction":
-            apply_prediction(df)
+            st.subheader("Prediction")
+            prediction(df)
 
 if __name__ == "__main__":
     main()
