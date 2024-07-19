@@ -51,6 +51,9 @@ def handle_missing_values(df):
                                    "Replace with mode", 
                                    "KNN imputation"])
     
+    df.replace([" ", ""], [None, None], inplace=True)
+    df = df.apply(pd.to_numeric, errors='coerce')
+    
     if method == "Delete rows with missing values":
         df = df.dropna()
     elif method == "Delete columns with missing values":
